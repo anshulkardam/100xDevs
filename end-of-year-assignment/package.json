@@ -1,12 +1,12 @@
 {
   "name": "end-of-year-assignment",
-  "module": "index.ts",
+  "module": "src/server.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/server.ts",
-    "build": "bunx tsc -b",
-    "start": "bun dist/server.js"
+    "dev": "pnpm exec tsx watch src/server.ts",
+    "build": "pnpm exec tsc -b",
+    "start": "node dist/server.js"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -22,9 +22,11 @@
     "@types/express": "^5.0.6",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
+    "tsx": "^4.21.0",
     "ws": "^8.19.0",
     "zod": "^4.3.2"
   }

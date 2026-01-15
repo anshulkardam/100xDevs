@@ -59,6 +59,40 @@ export function startWebSocketServer(
     clients.push(ws);
 
     ws.on("message", async (data) => {
+      let msg: any;
+
+      try {
+        msg = JSON.parse(data.toString());
+      } catch {
+        ws.send(
+          JSON.stringify({
+            event: "ERROR",
+            data: { message: "Invalid message format" },
+          })
+        );
+        return;
+      }
+
+      if (!msg || typeof msg !== "object" || typeof msg.event !== "string") {
+        ws.send(
+          JSON.stringify({
+            event: "ERROR",
+            data: { message: "Invalid message format" },
+          })
+        );
+        return;
+      }
+
+      if (
+        msg.event !== "ATTENDANCE_MARKED" &&
+        msg.event !== "TODAY_SUMMARY" &&
+        msg.event !== "DONE" &&
+        msg.event !== "MY_ATTENDANCE"
+      ) {
+        ws.send(JSON.stringify({ event: "ERROR", data: { message: "Unknown event" } }));
+        return;
+      }
+
       const user = (ws as any).user;
 
       const session = getActiveSession();
@@ -81,10 +115,19 @@ export function startWebSocketServer(
         }
       }
 
-      const msg = JSON.parse(data.toString()) as {
-        event: "ATTENDANCE_MARKED" | "TODAY_SUMMARY" | "MY_ATTENDANCE" | "DONE";
-        data: any;
-      };
+      if (user.role === "student") {
+        const className = await ClassModel.findById(session.classId).lean();
+
+        if (
+          className &&
+          !className.studentIds.some((sId) => sId.toString() === user.id.toString())
+        ) {
+          ws.send(
+            JSON.stringify({ event: "ERROR", data: { message: "No active attendance session" } })
+          );
+          return;
+        }
+      }
 
       if (msg.event === "ATTENDANCE_MARKED") {
         if (user.role !== "teacher") {
@@ -153,7 +196,7 @@ export function startWebSocketServer(
           return;
         }
 
-        const values = Object.keys(session.attendance);
+        const values = Object.values(session.attendance);
 
         const present = values.filter((v) => v === "present").length;
 
@@ -237,6 +280,14 @@ export function startWebSocketServer(
               })
             )
         );
+      } else {
+        ws.send(
+          JSON.stringify({
+            event: "ERROR",
+            data: { message: "Unknown event" },
+          })
+        );
+        return;
       }
     });
 
