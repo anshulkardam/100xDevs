@@ -9,5 +9,5 @@ export const userRegisterValidator = z.object({
 
 export const userLoginValidator = z.object({
   email: z.email(),
-  password: z.string(),
+  password: z.string().min(6),
 });
